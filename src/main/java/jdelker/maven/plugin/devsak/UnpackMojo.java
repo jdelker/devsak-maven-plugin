@@ -10,7 +10,7 @@
  *
  * You must not remove this notice, or any other, from this software.
  */
-package jdelker.maven.plugin;
+package jdelker.maven.plugin.devsak;
 
 import java.io.File;
 import java.util.ArrayList;
