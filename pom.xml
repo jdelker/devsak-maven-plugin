@@ -5,7 +5,7 @@
 
   <groupId>com.github.jdelker</groupId>
   <artifactId>devsak-maven-plugin</artifactId>
-  <version>1.1-SNAPSHOT</version>
+  <version>1.1</version>
   <packaging>maven-plugin</packaging>
 
   <name>Developemnt-Swiss-Army-Knife Maven Plugin</name>
@@ -45,7 +45,7 @@
     <connection>scm:git:https://github.com/jdelker/devsak-maven-plugin.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/jdelker/devsak-maven-plugin.git</developerConnection>
     <url>https://github.com/jdelker/devsak-maven-plugin.git</url>
-    <tag>HEAD</tag>
+    <tag>devsak-maven-plugin-1.1</tag>
   </scm>
 
   <dependencies>
