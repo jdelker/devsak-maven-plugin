@@ -1,5 +1,5 @@
 /*
- * UnpackMojo.java
+ * UnpackMojo
  *
  * Copyright (c) 2021 Joerg Delker
  *
