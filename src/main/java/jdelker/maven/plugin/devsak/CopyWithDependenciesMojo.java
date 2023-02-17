@@ -106,7 +106,8 @@ public class CopyWithDependenciesMojo extends AbstractMojo {
    * through each one passing it to copyArtifact.
    *
    * @throws MojoExecutionException with a message if an error occurs.
-   * @throws org.apache.maven.plugin.MojoFailureException
+   * @throws org.apache.maven.plugin.MojoFailureException when no artifactItems
+   * are present
    * @see ArtifactItem
    */
   @Override

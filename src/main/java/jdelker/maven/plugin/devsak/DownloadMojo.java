@@ -62,10 +62,10 @@ public class DownloadMojo extends AbstractMojo {
   @Parameter(property = "unpack", defaultValue = "false")
   private boolean unpack;
 
-  @Component
+  @Parameter( defaultValue = "${project}", readonly = true )
   private MavenProject mavenProject;
 
-  @Component
+  @Parameter( defaultValue = "${session}", readonly = true )
   private MavenSession mavenSession;
 
   @Component
