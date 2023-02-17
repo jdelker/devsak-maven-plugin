@@ -38,7 +38,7 @@ public class UnpackMojo extends AbstractMojo {
   /**
    * The list of class or jar files.
    */
-  @Parameter(required = true, readonly = true)
+  @Parameter(required = true)
   private FileSet fileSet;
 
   /**
