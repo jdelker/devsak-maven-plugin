@@ -1,0 +1,13 @@
+import java.io.*;
+
+var fileNames = new String[]{
+  "target/copied-artifacts/maven-model-3.6.3.jar",
+  "target/copied-artifacts/plexus-utils-3.2.1.jar"
+};
+
+for (String fn : fileNames) {
+  File file = new File( basedir, fn );
+  if ( !file.isFile() ) {
+    throw new FileNotFoundException( "Could not find expected file: " + file );
+  }
+}
