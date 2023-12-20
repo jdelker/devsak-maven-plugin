@@ -1,0 +1,240 @@
+Usage
+ 
+  Brief examples on how to use the plugin goals:
+
+%{toc|fromDepth=2}
+ 
+* <<<devsak:copy-with-dependencies>>>
+
+   This goal is quite similar to the {{{https://maven.apache.org/plugins/maven-dependency-plugin/usage.html#dependency:copy-dependencies}dependency:copy-dependencies}} 
+   from the default maven-dependency-plugin. But instead of copying the project's
+   dependencies, this goal resolves a given artifact and copies it to the target
+   folder, together with all it's required dependencies.
+   This is particularly useful, if you must assemble libraries, that are 
+   unrelated to the dependencies declared for your project.
+
+   This goal is meant to be bound to a lifecycle phase and is configured in your
+   <<<pom.xml>>>. A single or multiple artifacts can be specified in the plugin's
+   configuration. Each artifact allows to specify a distinct target directory for 
+   itself and it's dependencies.
+   Additionally, particular "includes" and "excludes" can be defined, which limit
+   the copied artifacts.
+
+   []
+
+   Configure the plugin something like this:
+
++---+
+<project>
+  [...]
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>${project.artifactId}</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <id>copy</id>
+            <goals>
+              <goal>copy-with-dependencies</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>[ groupId ]</groupId>
+                  <artifactId>[ artifactId ]</artifactId>
+                  <version>[ version ]</version>
+                  <classifier> [classifier - optional] </classifier>
+                  <outputDirectory>[ output directory ]</outputDirectory>
+                  <includes>[ comma separated list of artifact filters ]</includes>
+                  <excludes>[ comma separated list of artifact filters ]</excludes>
+                </artifactItem>
+              </artifactItems>
+              <!-- other configurations here -->
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+  [...]
+</project>
++---+
+
+    []
+
+* <<<devsak:unpack>>>
+
+   Where archive files are not available as a maven artifact (and thus could be 
+   unpacked with the {{{https://maven.apache.org/plugins/maven-dependency-plugin/usage.html#dependency:unpack}dependency:unpack}} goal)
+   this goal basically provides the same functionality for local archive files.
+
+   Local archive files are specified through a standard "fileSet" parameter, to
+   give the maximum of flexibility. For a single file, simply set the include 
+   filter to the name of the file.
+
+   Any matching archive files, are unpacked in the given "outputDirectory".
+   If multiple archives shall be unpacked in distinct directories, define them
+   in separate execution blocks.
+
+   This goal is meant to be bound to a lifecycle and configured in your pom.xml.
+   The following example shows the general usage:
+
++---+
+<project>
+  [...]
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>${project.artifactId}</artifactId>
+        <version>${project.version}</version>
+        <execution>
+          <id>unpack-files</id>
+          <goals>
+            <goal>unpack</goal>
+          </goals>
+          <configuration>
+            <fileSet>
+              <directory>[ source directory ]</directory>
+              <includes>
+                <include>[ include filter ]</include>
+              </includes>
+              <excludes>
+                <exclude>[ exclude filter ]</exclude>
+              </excludes>
+            </fileSet>
+            <outputDirectory>[ output directory ]</outputDirectory>
+          </configuration>
+        </execution>
+      </plugin>
+    </plugins>
+  </build>
+  [...]
+</project>
++---+
+
+
+* <<<devsak:download>>>
+
+   This goal is meant to be bound to a lifecycle and configured in your pom.xml.
+   It can be used to download arbitrary HTTP(S) URLs and place the download
+   (as is or unpacked) in the specified location. 
+   Multiple download resources can be defined in a single execution.
+   The downloaded items are stored locally in the location defined by "outputDirectory".
+   Each download item can defer from that location, when accompanied by a
+   "targetDir" location. Furthermore, an item may also define the "targetName",
+   which defines an alternate filename to use locally. 
+   
+   Items to download can either be specified inline of the plugin configuration
+   or in an external XML file.
+   If a sha256 checksum is provided with an item, the downloaded file is checked
+   for a match.
+
+   If "unpack" is set to true, each download item is unpacked on-the-fly into the
+   location defined by "outputDirectory" or "targetDir" respectively.
+   
+   Configure the plugin like this:
+   
++---+
+<project>
+  [...]
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>${project.artifactId}</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <id>download-files</id>
+            <goals>
+              <goal>download</goal>
+            </goals>
+            <configuration>
+              <downloadItems>
+                <downloadItem>
+                  <uri>[ HTTP(s) URL]</uri>
+                  <sha256>[ SHA256 checksum ]</sha256>
+                  <targetName>[ optional target name ]</targetName>
+                  <targetDir>[ optional target directory ]</targetDir>
+                </downloadItem>
+              </downloadItems>
+              <itemFile>[ external XML with download items ]</itemFile>
+              <unpack>[ true or false ]</unpack>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+  [...]
+</project>
++---+
+
+  If you intend to configure this goal for execution on the command line using:
+
++---+
+mvn devsak:download -Ddownload.itemFile=<items.xml> [-Ddownload.outputDir=<dir>] [-Ddownload.unpack=<true/false>]
++---+
+
+
+* <<<devsak:upload>>>
+
+   This goal is meant to be bound to a lifecycle and configured in your pom.xml.
+   It allows to upload local files via HTTP PUT or POST request.
+
+   Local files to upload are specified via a standard "fileSet". The usual 
+   directives for "includes" and "excludes" apply.
+   Matching files are then uploaded via HTTP request to the URL consisting of
+   "serverUrl"/"serverPath". If "usePOST" is set to true, a POST request is
+   performed, otherwise PUT is used.
+
+   If the server indicates the requirement for authentication (response code 401),
+   basic authentication is attempted. The particular credentials must be provided
+   through appropriate server definitions in your <<settings.xml>>.
+   In case the server requires authentication credentials upfront, set
+   "preemtiveAuth" to true.
+
++---+
+<project>
+  [...]
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>${project.artifactId}</artifactId>
+        <version>${project.version}</version>
+        <configuration>
+          <serverId>[ server id as defined in settings.xml ]</serverId>
+          <serverUrl>[ server URL ]</serverUrl>
+          <usePOST>[ true or false ]</usePOST>
+          <preemptiveAuth>[ true or false ]</preemptiveAuth>
+        </configuration>
+        <executions>
+          <execution>
+            <id>publish-files</id>
+            <goals>
+              <goal>upload</goal>
+            </goals>
+            <configuration>
+              <fileSet>
+                <directory>[ local directory containing upload files ]</directory>
+                <includes>
+                  <include>[ include filter ]</include>
+                </includes>
+                <excludes>
+                  <exclude>[ exclude filter ]</exclude>
+                </excludes>
+              </fileSet>
+              <serverPath>[ path on server ]</serverPath>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+  [...]
+</project>
++---+

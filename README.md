@@ -1,11 +1,19 @@
-# Developer's Swiss Army Knife for Maven
+# devsak-maven-plugin
 
-Maven plugin, which provides several useful goals for unusual requirements:
+_The **Dev**eloper's ***S***wiss ***A***rmy ***K***nife_
 
-unpack:
-Extract a local (!) archive file (for unpacking dependency artifacts, see maven-dependency-plugin!)
+This plugin provides some useful functionality for unusual requirements, 
+where standard maven plugins often provide no solution.
 
-copy-with-dependencies:
-Copy the given artifacts, including all it's dependencies. This basically equals
-the functionality of maven-dependency-plugin, but uses a given list of artifacts
-rather than the project dependencies.
+#### Goals
+
+| Goal                                                                                                            | Description                       |
+| --------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| [`devsak:copy-wth-dependencies`](https://jdelker.github.io/devsak-maven-plugin/#devsak:copy-with-dependencies)  | Copy artifacts with dependencies  |
+| [`devsak:unpack`](https://jdelker.github.io/devsak-maven-plugin/#devsak:unpack)                                 | Unpack local archives             |
+| [`devsak:download`](https://jdelker.github.io/devsak-maven-plugin/#devsak:download)                             | Download items via HTTP           |
+| [`devsak:upload`](https://jdelker.github.io/devsak-maven-plugin/#devsak:upload)                                 | Upload items via HTTP             |
+
+#### Documentation
+
+* The **[Plugin Docs](https://jdelker.github.io/devsak-maven-plugin)** has a detailed reference for all and everything.
