@@ -17,7 +17,20 @@
  */
 package jdelker.maven.plugin.devsak;
 
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -43,29 +56,35 @@ public class DownloadMojo extends AbstractMojo {
     "download-maven-plugin",
     "1.6.7"
   };
-  
+
   /**
    * List of URIs to fetch.
    */
   @Parameter
-  DownloadResource[] resources;
+  List<DownloadItem> downloadItems;
+
+  /**
+   * Name of file containing Resources to download.
+   */
+  @Parameter(property = "download.itemsFile")
+  private File itemsFile;
 
   /**
    * Location of the output.
    */
-  @Parameter(defaultValue = "${project.build.directory}/unpacked", alias = "outputDir", required = true)
-  private File outputDirectory;
+  @Parameter(property = "download.outputDir", defaultValue = "${project.build.directory}", required = true)
+  private String outputDirectory;
 
   /**
    * Whether to unpack the file in case it is an archive (.zip).
    */
-  @Parameter(property = "unpack", defaultValue = "false")
+  @Parameter(property = "download.unpack", defaultValue = "false")
   private boolean unpack;
 
-  @Parameter( defaultValue = "${project}", readonly = true )
+  @Parameter(defaultValue = "${project}", readonly = true)
   private MavenProject mavenProject;
 
-  @Parameter( defaultValue = "${session}", readonly = true )
+  @Parameter(defaultValue = "${session}", readonly = true)
   private MavenSession mavenSession;
 
   @Component
@@ -77,21 +96,35 @@ public class DownloadMojo extends AbstractMojo {
           throws MojoExecutionException, MojoFailureException {
 
     // prepare output directory
-    if (!outputDirectory.exists()) {
-      outputDirectory.mkdirs();
+//    if (!outputDirectory.exists()) {
+//      outputDirectory.mkdirs();
+//    }
+
+    if (downloadItems == null) {
+      downloadItems = new ArrayList<>();
     }
 
-    for (DownloadResource resource : resources) {
+    if (itemsFile != null) {
+      addResourcesFromFile(itemsFile, downloadItems);
+    }
+
+    for (DownloadItem resource : downloadItems) {
       String uri = resource.getUri();
+      Objects.requireNonNull(uri, "downloadItem has no uri: " + resource.toString());
+      
       String sha256 = resource.getSha256();
       getLog().info("Downloading " + uri + (sha256 != null ? " (sha256: " + sha256 + ")" : ""));
 
+      String destDir = resource.getTargetDir() != null ?
+              resource.getTargetDir() : outputDirectory;
+      
       executeMojo(
-              plugin(DOWNLOAD_PLUGIN[0],DOWNLOAD_PLUGIN[1],DOWNLOAD_PLUGIN[2]),
+              plugin(DOWNLOAD_PLUGIN[0], DOWNLOAD_PLUGIN[1], DOWNLOAD_PLUGIN[2]),
               goal("wget"),
               configuration(
                       element(name("uri"), uri),
-                      element(name("outputDirectory"), outputDirectory.getPath()),
+                      element(name("outputFileName"), resource.getTargetName()),
+                      element(name("outputDirectory"), destDir),
                       element(name("unpack"), String.valueOf(unpack)),
                       element(name("sha256"), sha256)
               ),
@@ -104,32 +137,84 @@ public class DownloadMojo extends AbstractMojo {
     }
   }
 
-  public static class DownloadResource {
+  private void addResourcesFromFile(final File resourcesFile, final List<DownloadItem> resourcesList)
+          throws MojoExecutionException {
+    try {
+      JAXBContext context = JAXBContext.newInstance(DownloadItems.class);
+      DownloadItems drList = (DownloadItems) context.createUnmarshaller()
+              .unmarshal(resourcesFile);
+      if (drList != null && drList.getDownloadItems()!= null) {
+        for (DownloadItem res : drList.getDownloadItems()) {
+          resourcesList.add(res);
+        }
+      } else {
+        getLog().warn("no resources found in " + resourcesFile);
+      }
+    } catch (JAXBException ex) {
+      throw new MojoExecutionException("unable to parse resourcesFile " + resourcesFile, ex);
+    }
+  }
 
-    String uri;
-    String sha256;
+  @XmlRootElement(name = "downloadItems")
+  @XmlAccessorType(XmlAccessType.FIELD)
+  public static class DownloadItems {
 
-    public DownloadResource() {
+    @XmlElement(name = "downloadItem")
+    private List<DownloadItem> downloadItems = null;
+
+    public List<DownloadItem> getDownloadItems() {
+      return downloadItems;
     }
 
-    public DownloadResource(String uri, String sha256) {
-      this.uri = uri;
-      this.sha256 = sha256;
+    public void setDownloadItems(List<DownloadItem> item) {
+      this.downloadItems = item;
+    }
+  }
+
+  @XmlRootElement(name = "downloadItem")
+  @XmlAccessorType(XmlAccessType.FIELD)
+  @XmlType(propOrder = {"uri", "targetName", "targetDir", "sha256"})
+  public static class DownloadItem {
+
+    URI uri;
+    String targetName;
+    String targetDir;
+    String sha256;
+
+    public DownloadItem() {
     }
 
     public String getUri() {
-      return uri;
+      return uri != null ? uri.toString() : null;
     }
 
-    public void setUri(String uri) {
-      this.uri = uri;
+    public final void setUri(String uriStr) throws URISyntaxException {
+      this.uri = new URI(uriStr);
+    }
+
+    public String getTargetDir() {
+      return targetDir;
+    }
+
+    public void setTargetDir(String targetDir) {
+      this.targetDir = targetDir;
+    }
+
+    public String getTargetName() {
+      return targetName != null || uri == null
+              ? targetName
+              : FilenameUtils.getName(uri.getPath());
+    }
+
+    public final void setTargetName(String targetName) {
+      this.targetName = targetName;
     }
 
     public String getSha256() {
       return sha256;
     }
 
-    public void setSha256(String sha256) {
+    public final void setSha256(String sha256) {
       this.sha256 = sha256;
     }
   }

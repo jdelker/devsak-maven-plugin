@@ -19,9 +19,16 @@
  */
 package jdelker.maven.plugin.devsak.test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.client.initialize.PluginExpectationInitializer;
+import org.mockserver.model.HttpStatusCode;
+import org.mockserver.model.MediaType;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import static org.mockserver.model.NottableString.not;
@@ -34,6 +41,20 @@ public class MockServerInitializer implements PluginExpectationInitializer {
   // BASIC AUTH - base64 encoded from "user01:goodpass"
   private final static String BASIC_AUTH = 
           "Basic " + Base64.getEncoder().encodeToString("user01:goodpass".getBytes());
+  
+  private final static String FILES_DIRECTORY = "src/test/it/files";
+  
+  private final static String FILE_TXT = "file1.txt";
+  private final static String FILE_ZIP = "file2.zip";
+  
+
+  private final Map<String,byte[]> fileContentMap = new HashMap<>();
+  
+  public MockServerInitializer() throws IOException {
+    fileContentMap.put(FILE_TXT, Files.readAllBytes(Path.of(FILES_DIRECTORY,FILE_TXT)));
+    fileContentMap.put(FILE_ZIP, Files.readAllBytes(Path.of(FILES_DIRECTORY,FILE_ZIP)));
+  }
+
   
   @Override
   public void initializeExpectations(MockServerClient client) {
@@ -53,6 +74,32 @@ public class MockServerInitializer implements PluginExpectationInitializer {
             .respond(
                     response()
                             .withStatusCode(HttpStatusCode.UNAUTHORIZED_401.code())
+            );
+
+    // GET TXT file
+    client.when(
+            request()
+                    .withMethod("GET")
+                    .withPath("/it-get-file/file1.txt")
+    )
+            .respond(
+                    response()
+                            .withContentType(MediaType.PLAIN_TEXT_UTF_8)
+                            .withBody(fileContentMap.get(FILE_TXT))
+                            .withStatusCode(HttpStatusCode.OK_200.code())
+            );
+
+    // GET ZIP file
+    client.when(
+            request()
+                    .withMethod("GET")
+                    .withPath("/it-get-file/file2.zip")
+    )
+            .respond(
+                    response()
+                            .withContentType(MediaType.APPLICATION_BINARY)
+                            .withBody(fileContentMap.get(FILE_ZIP))
+                            .withStatusCode(HttpStatusCode.OK_200.code())
             );
 
     // Single file PUT

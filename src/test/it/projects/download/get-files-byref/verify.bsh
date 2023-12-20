@@ -1,0 +1,13 @@
+import java.io.*;
+
+var fileNames = new String[]{
+  "target/file1.txt",
+  "target/file2.zip"
+};
+
+for (String fn : fileNames) {
+  File file = new File( basedir, fn );
+  if ( !file.isFile() ) {
+    throw new FileNotFoundException( "Could not find expected file: " + file );
+  }
+}

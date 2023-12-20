@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<downloadItems>
+  <downloadItem>
+    <uri>${goodServer}/it-get-file/file1.txt</uri>
+    <sha256>3c335690e78e19e8540b6180e2d8f4357d981ead866f0f64396700f84291eb5c</sha256>
+  </downloadItem>
+  <downloadItem>
+    <uri>${goodServer}/it-get-file/file2.zip</uri>
+    <sha256>460e9e28d6ba5f57ca3ec4d2e47a05a7ae035d6a83e689d318a5d1efa9138977</sha256>
+  </downloadItem>
+</downloadItems>

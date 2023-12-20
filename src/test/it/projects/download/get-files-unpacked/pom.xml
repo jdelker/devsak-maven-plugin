@@ -1,0 +1,48 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>@project.groupId@.it</groupId>
+  <artifactId>it-get-files-unpacked</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <name>IT :: GET files unpacked</name>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>@project.groupId@</groupId>
+        <artifactId>@project.artifactId@</artifactId>
+        <version>@project.version@</version>
+        <configuration>
+          <serverId>it-auth-good</serverId>
+          <serverUrl>${goodServer}</serverUrl>
+          <preemptiveAuth>true</preemptiveAuth>
+        </configuration>
+        <executions>
+          <execution>
+            <id>get-file-inline</id>
+            <phase>test</phase>
+            <goals>
+              <goal>download</goal>
+            </goals>
+            <configuration>
+              <downloadItems>
+                <downloadItem>
+                  <uri>${goodServer}/it-get-file/file2.zip</uri>
+                  <sha256>460e9e28d6ba5f57ca3ec4d2e47a05a7ae035d6a83e689d318a5d1efa9138977</sha256>
+                </downloadItem>
+              </downloadItems>
+              <unpack>true</unpack>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
