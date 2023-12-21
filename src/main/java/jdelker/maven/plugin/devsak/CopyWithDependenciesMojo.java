@@ -1,7 +1,7 @@
 /*
  * CopyWithDependencies
  *
- * Copyright (c) 2022 Joerg Delker
+ * Copyright (c) 2022-2023 Joerg Delker
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,16 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
-import jdelker.maven.plugin.devsak.util.ArtifactItem;
 import jdelker.maven.plugin.devsak.util.DependencyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.ArtifactUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -39,9 +41,13 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.DefaultProjectBuildingRequest;
 import org.apache.maven.project.ProjectBuildingRequest;
+import org.apache.maven.shared.artifact.filter.resolve.AndFilter;
 import org.apache.maven.shared.artifact.filter.resolve.PatternExclusionsFilter;
+import org.apache.maven.shared.artifact.filter.resolve.PatternInclusionsFilter;
+import org.apache.maven.shared.artifact.filter.resolve.TransformableFilter;
 import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResult;
 import org.apache.maven.shared.transfer.dependencies.DefaultDependableCoordinate;
+import org.apache.maven.shared.transfer.dependencies.DependableCoordinate;
 import org.apache.maven.shared.transfer.dependencies.resolve.DependencyResolver;
 import org.apache.maven.shared.transfer.dependencies.resolve.DependencyResolverException;
 import org.codehaus.plexus.util.FileUtils;
@@ -59,9 +65,9 @@ public class CopyWithDependenciesMojo extends AbstractMojo {
   public static final String TRACKING_FILENAME = "copy-with-dependencies.tracking";
 
   /**
-   * Collection of ArtifactItems to work on. (ArtifactItem contains groupId,
-   * artifactId, version, type, classifier, outputDirectory, destFileName,
-   * overWrite and encoding.) See <a href="./usage.html">Usage</a> for details.
+   * Collection of ArtifactItems to work on.
+   *
+   * See <a href="./usage.html">Usage</a> for details.
    */
   @Parameter
   private List<ArtifactItem> artifactItems;
@@ -75,17 +81,11 @@ public class CopyWithDependenciesMojo extends AbstractMojo {
   /**
    * Directory to store marker filesF
    */
-  @Parameter(defaultValue = "${project.build.directory}/dependencies", required = true)
+  @Parameter(defaultValue = "${project.build.directory}/copied-artifacts", required = true)
   private File outputDirectory;
 
-  @Parameter
-  private String includeScope;
-
-  @Parameter
-  private String excludeScope;
-
   /**
-   * Directory to store marker filesF
+   * Directory to store marker files
    */
   @Parameter(defaultValue = "${project.build.directory}/.markers", required = true)
   private File markersDirectory;
@@ -148,12 +148,8 @@ public class CopyWithDependenciesMojo extends AbstractMojo {
       outputDir = outputDirectory;
     }
 
-    // handle exclusions
-    String excludes = artifactItem.getExcludes();
-    PatternExclusionsFilter pef = null;
-    if (StringUtils.isNotEmpty(excludes)) {
-      pef = new PatternExclusionsFilter(Arrays.asList(excludes.split(",")));
-    }
+    // handle filters
+    TransformableFilter filter = getFilter(artifactItem);
 
     try {
       DefaultDependableCoordinate coordinate = new DefaultDependableCoordinate();
@@ -163,14 +159,12 @@ public class CopyWithDependenciesMojo extends AbstractMojo {
       coordinate.setType(artifactItem.getType());
 
       Iterable<ArtifactResult> arList
-              = dependencyResolver.resolveDependencies(getProjectBuildingRequest(), coordinate, pef);
+              = dependencyResolver.resolveDependencies(getProjectBuildingRequest(), coordinate, filter);
       if (arList != null) {
         for (ArtifactResult ar : arList) {
           Artifact a = ar.getArtifact();
-          if (isScopeIncluded(a) && !isScopeExcluded(a)) {
-            File destFile = new File(outputDir, DependencyUtil.getFormattedFileName(a, false));
-            copyFile(a.getFile(), destFile);
-          }
+          File destFile = new File(outputDir, DependencyUtil.getFormattedFileName(a, false));
+          copyFile(a.getFile(), destFile);
         }
       }
     } catch (DependencyResolverException ex) {
@@ -188,7 +182,7 @@ public class CopyWithDependenciesMojo extends AbstractMojo {
   protected void copyFile(File artifact, File destFile)
           throws MojoExecutionException {
     try {
-      getLog().info("  copying " + artifact.getName() + " to " + destFile);
+      getLog().info("Copying " + artifact.getName() + " to " + destFile);
       FileUtils.copyFile(artifact, destFile);
     } catch (IOException e) {
       throw new MojoExecutionException("Error copying artifact from " + artifact + " to " + destFile, e);
@@ -223,6 +217,9 @@ public class CopyWithDependenciesMojo extends AbstractMojo {
     File trackingFile = new File(markersDirectory, TRACKING_FILENAME);
     try {
       if (artifactTracking && !copiedArtifacts.isEmpty()) {
+        if (!markersDirectory.exists()) {
+          markersDirectory.mkdirs();
+        }
         Files.write(trackingFile.toPath(), copiedArtifacts, StandardOpenOption.CREATE);
       }
     } catch (IOException ex) {
@@ -230,19 +227,254 @@ public class CopyWithDependenciesMojo extends AbstractMojo {
     }
   }
 
-  private boolean isScopeIncluded(Artifact a) {
-    boolean isIncluded = false;
-    if (StringUtils.isEmpty(includeScope) || includeScope.equalsIgnoreCase(a.getScope())) {
-      isIncluded = true;
+  private TransformableFilter getFilter(ArtifactItem artifactItem) {
+    List<TransformableFilter> filterList = new ArrayList<>();
+
+    String excludes = artifactItem.getExcludes();
+    if (StringUtils.isNotEmpty(excludes)) {
+      filterList.add(new PatternExclusionsFilter(Arrays.asList(excludes.split(","))));
     }
-    return isIncluded;
+    String includes = artifactItem.getIncludes();
+    if (StringUtils.isNotEmpty(includes)) {
+      filterList.add(new PatternInclusionsFilter(Arrays.asList(includes.split(","))));
+    }
+
+    return filterList.isEmpty() ? null : new AndFilter(filterList);
   }
 
-  private boolean isScopeExcluded(Artifact a) {
-    boolean isExcluded = true;
-    if (StringUtils.isEmpty(excludeScope) || !excludeScope.equalsIgnoreCase(a.getScope())) {
-      isExcluded = false;
+  /**
+   * POJO for an artifact item.
+   *
+   * @author jdelker
+   */
+  public static class ArtifactItem
+          implements DependableCoordinate {
+
+    /**
+     * Group Id of Artifact
+     *
+     * @parameter
+     * @required
+     */
+    private String groupId;
+
+    /**
+     * Name of Artifact
+     *
+     * @parameter
+     * @required
+     */
+    private String artifactId;
+
+    /**
+     * Version of Artifact
+     *
+     * @parameter
+     */
+    private String version = null;
+
+    /**
+     * Type of Artifact (War,Jar,etc)
+     *
+     * @parameter
+     * @required
+     */
+    private String type = "jar";
+
+    /**
+     * Classifier for Artifact (tests,sources,etc)
+     *
+     * @parameter
+     */
+    private String classifier;
+
+    /**
+     * Location to use for this Artifact. Overrides default location.
+     *
+     * @parameter
+     */
+    private File outputDirectory;
+
+    /**
+     * Provides ability to change destination file name
+     *
+     * @parameter
+     */
+    private String destFileName;
+
+    /**
+     * A comma separated list of artifacts patterns to include.
+     */
+    private String includes;
+
+    /**
+     * A comma separated list of artifacts patterns to exclude.
+     */
+    private String excludes;
+
+    /**
+     * Default constructor.
+     */
+    public ArtifactItem() {
+      // default constructor
     }
-    return isExcluded;
+
+    private String filterEmptyString(String in) {
+      if ("".equals(in)) {
+        return null;
+      }
+      return in;
+    }
+
+    /**
+     * @return Returns the artifactId.
+     */
+    @Override
+    public String getArtifactId() {
+      return artifactId;
+    }
+
+    /**
+     * @param theArtifact The artifactId to set.
+     */
+    public void setArtifactId(String theArtifact) {
+      this.artifactId = filterEmptyString(theArtifact);
+    }
+
+    /**
+     * @return Returns the groupId.
+     */
+    @Override
+    public String getGroupId() {
+      return groupId;
+    }
+
+    /**
+     * @param groupId The groupId to set.
+     */
+    public void setGroupId(String groupId) {
+      this.groupId = filterEmptyString(groupId);
+    }
+
+    /**
+     * @return Returns the type.
+     */
+    @Override
+    public String getType() {
+      return type;
+    }
+
+    /**
+     * @param type The type to set.
+     */
+    public void setType(String type) {
+      this.type = filterEmptyString(type);
+    }
+
+    /**
+     * @return Returns the version.
+     */
+    @Override
+    public String getVersion() {
+      return version;
+    }
+
+    /**
+     * @param version The version to set.
+     */
+    public void setVersion(String version) {
+      this.version = filterEmptyString(version);
+    }
+
+    /**
+     * @return Returns the base version.
+     */
+    public String getBaseVersion() {
+      return ArtifactUtils.toSnapshotVersion(version);
+    }
+
+    /**
+     * @return Classifier.
+     */
+    @Override
+    public String getClassifier() {
+      return classifier;
+    }
+
+    /**
+     * @param classifier Classifier.
+     */
+    public void setClassifier(String classifier) {
+      this.classifier = filterEmptyString(classifier);
+    }
+
+    @Override
+    public String toString() {
+      if (this.classifier == null) {
+        return groupId + ":" + artifactId + ":" + Objects.toString(version, "?") + ":" + type;
+      } else {
+        return groupId + ":" + artifactId + ":" + classifier + ":" + Objects.toString(version, "?") + ":"
+                + type;
+      }
+    }
+
+    /**
+     * @return Returns the location.
+     */
+    public File getOutputDirectory() {
+      return outputDirectory;
+    }
+
+    /**
+     * @param outputDirectory The outputDirectory to set.
+     */
+    public void setOutputDirectory(File outputDirectory) {
+      this.outputDirectory = outputDirectory;
+    }
+
+    /**
+     * @return Returns the location.
+     */
+    public String getDestFileName() {
+      return destFileName;
+    }
+
+    /**
+     * @param destFileName The destFileName to set.
+     */
+    public void setDestFileName(String destFileName) {
+      this.destFileName = filterEmptyString(destFileName);
+    }
+
+    /**
+     * @return Returns a comma separated list of excluded items
+     */
+    public String getExcludes() {
+      return DependencyUtil.cleanToBeTokenizedString(this.excludes);
+    }
+
+    /**
+     * @param excludes A comma separated list of items to exclude i.e.
+     * <code>**\/*.xml, **\/*.properties</code>
+     */
+    public void setExcludes(String excludes) {
+      this.excludes = excludes;
+    }
+
+    /**
+     * @return Returns a comma separated list of included items
+     */
+    public String getIncludes() {
+      return DependencyUtil.cleanToBeTokenizedString(this.includes);
+    }
+
+    /**
+     * @param includes A comma separated list of items to include i.e.
+     * <code>**\/*.xml, **\/*.properties</code>
+     */
+    public void setIncludes(String includes) {
+      this.includes = includes;
+    }
   }
+
 }

@@ -1,0 +1,31 @@
+import java.io.*;
+
+// check if targetdir exists
+File targetDir = new File(basedir, "target/copied-artifacts");
+if (!targetDir.exists()) throw new FileNotFoundException("targetDir not found: " + targetDir);
+
+// check if any files are present
+File[] files = targetDir.listFiles();
+if (files.length == 0) throw new Exception("Could not find any file");
+
+List fileList = new ArrayList(Arrays.asList(files));
+
+// define expected files
+var fileNames = List.of(
+   "maven-model-3.6.3.jar",
+   "maven-plugin-api-3.6.3.jar");
+
+// check for expected files
+for (String fn : fileNames) {
+  File f = new File(targetDir, fn);
+  if (!f.exists()) {
+    throw new FileNotFoundException("Could not find expected file: " + f );
+  } else {
+    fileList.remove(f);
+  }
+}
+
+// check for any left-over files
+if (!fileList.isEmpty()) {
+  throw new Exception("found unexpected files: " + fileList);
+}

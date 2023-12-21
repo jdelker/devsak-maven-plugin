@@ -1,0 +1,36 @@
+${project.name}
+
+  The *Developer's Swiss Army Knife for Maven* (devsak) plugin provides some
+  useful functionality for unusual requirements, where standard maven plugins 
+  often provide no solution.
+
+* Goals Overview
+
+  The plugin has several independent goals:
+
+  * {{{./copy-with-dependencies-mojo.html}devsak:copy-with-dependencies}} takes
+    a list of artifacts and copies them to a specified location, including their
+    dependencies.
+
+  * {{{./download-file-mojo.html}devsak:download}} Download files via HTTP.
+
+  * {{{./upload-mojo.html}devsak:upload}} Upload files via HTTP.
+
+  * {{{./unpack-mojo.html}devsak:unpack}} Unpack local files.
+
+  * {{{./help-mojo.html}devsak:help}} Displays help for the plugin.
+
+
+  []
+
+* Usage
+
+  General instructions on how to use the DevSAK Plugin can be found on the 
+  {{{./usage.html}usage page}}. 
+
+* Issues
+
+  If you think the plugin is missing a feature or has a defect, you can file a 
+  feature request or bug report in the {{{./issue-tracking.html}issue tracker}}.
+
+
