@@ -247,6 +247,16 @@
             <scmBranch>gh-pages</scmBranch>
           </configuration>
         </plugin>
+        <plugin>
+          <groupId>com.amashchenko.maven.plugin</groupId>
+          <artifactId>gitflow-maven-plugin</artifactId>
+          <version>1.20.0</version>
+          <configuration>
+            <gitFlowConfig> 
+              <productionBranch>main</productionBranch> 
+            </gitFlowConfig>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
 
