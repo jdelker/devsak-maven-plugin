@@ -2,9 +2,9 @@ name: devsak-maven-plugin-ci
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "develop", "main" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "develop" ]
 
 jobs:
   build:
