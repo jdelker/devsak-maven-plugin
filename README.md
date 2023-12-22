@@ -1,7 +1,7 @@
 [![License](http://img.shields.io/:license-apache-brightgreen.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
-[![Build Status](https://github.com/devsak-maven-plugin/devsak-maven-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/devsak-maven-plugin/devsak-maven-plugin/actions/workflows/ci.yml)
+[![Build Status](https://github.com/jdelker/devsak-maven-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/jdelker/devsak-maven-plugin/actions/workflows/ci.yml)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.jdelker.devsak/devsak-maven-plugin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.jdelker.devsak/devsak-maven-plugin)
-[![Javadocs](https://www.javadoc.io/badge/com.github.jdelker.devsak/devsak-maven-plugin.svg)](https://www.javadoc.io/doc/com.github.jdelker.devsak/devsak-maven-plugin)
+[![javadoc](https://javadoc.io/badge2/com.github.jdelker/devsak-maven-plugin/javadoc.svg)](https://javadoc.io/doc/com.github.jdelker/devsak-maven-plugin) 
 
 # devsak-maven-plugin
 
