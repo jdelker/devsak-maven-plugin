@@ -262,6 +262,28 @@
 
     <plugins>
       <plugin>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>${maven-enforcer-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>enforce-maven-version</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <version>${maven.version}</version>
+                </requireMavenVersion>
+                <requireJavaVersion>
+                  <version>${supported.java.version}</version>
+                </requireJavaVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
         <configuration>
@@ -282,6 +304,19 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <version>${nexus-staging-maven-plugin.version}</version>
+        <extensions>true</extensions>
+        <configuration>
+          <serverId>sonatype-nexus-snapshots</serverId>
+          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+          <autoReleaseAfterClose>true</autoReleaseAfterClose>
+          <stagingProgressPauseDurationSeconds>10</stagingProgressPauseDurationSeconds>
+          <stagingProgressTimeoutMinutes>10</stagingProgressTimeoutMinutes>
+        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -363,19 +398,6 @@
                 </goals>
               </execution>
             </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>${nexus-staging-maven-plugin.version}</version>
-            <extensions>true</extensions>
-            <configuration>
-              <serverId>sonatype-nexus</serverId>
-              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-              <autoReleaseAfterClose>true</autoReleaseAfterClose>
-              <stagingProgressPauseDurationSeconds>10</stagingProgressPauseDurationSeconds>
-              <stagingProgressTimeoutMinutes>10</stagingProgressTimeoutMinutes>
-            </configuration>
           </plugin>
         </plugins>
       </build>
@@ -459,28 +481,6 @@
               <stagingProgressPauseDurationSeconds>10</stagingProgressPauseDurationSeconds>
               <stagingProgressTimeoutMinutes>10</stagingProgressTimeoutMinutes>
             </configuration>
-          </plugin>
-          <plugin>
-            <artifactId>maven-enforcer-plugin</artifactId>
-            <version>${maven-enforcer-plugin.version}</version>
-            <executions>
-              <execution>
-                <id>enforce-maven-version</id>
-                <goals>
-                  <goal>enforce</goal>
-                </goals>
-                <configuration>
-                  <rules>
-                    <requireMavenVersion>
-                      <version>${maven.version}</version>
-                    </requireMavenVersion>
-                    <requireJavaVersion>
-                      <version>${supported.java.version}}</version>
-                    </requireJavaVersion>
-                  </rules>
-                </configuration>
-              </execution>
-            </executions>
           </plugin>
         </plugins>
       </build>
