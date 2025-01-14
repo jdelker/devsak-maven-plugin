@@ -32,7 +32,7 @@ import org.codehaus.plexus.components.io.fileselectors.IncludeExcludeFileSelecto
 /**
  * Goal for unpacking files
  */
-@Mojo(name = "unpack", defaultPhase = LifecyclePhase.PROCESS_SOURCES)
+@Mojo(name = "unpack", requiresProject = false, defaultPhase = LifecyclePhase.PROCESS_SOURCES)
 public class UnpackMojo extends AbstractMojo {
 
   /**
