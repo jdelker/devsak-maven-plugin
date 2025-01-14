@@ -69,7 +69,7 @@ import org.apache.maven.shared.model.fileset.util.FileSetManager;
  * Uploads file to remote repository.
  *
  */
-@Mojo(name = "upload", defaultPhase = LifecyclePhase.DEPLOY)
+@Mojo(name = "upload", requiresProject = false, defaultPhase = LifecyclePhase.DEPLOY)
 public class UploadMojo
         extends AbstractMojo {
 

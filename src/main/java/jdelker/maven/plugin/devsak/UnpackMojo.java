@@ -32,7 +32,7 @@ import org.codehaus.plexus.components.io.fileselectors.IncludeExcludeFileSelecto
 /**
  * Goal for unpacking files
  */
-@Mojo(name = "unpack", defaultPhase = LifecyclePhase.PROCESS_SOURCES)
+@Mojo(name = "unpack", requiresProject = false, defaultPhase = LifecyclePhase.PROCESS_SOURCES)
 public class UnpackMojo extends AbstractMojo {
 
   /**
@@ -73,7 +73,7 @@ public class UnpackMojo extends AbstractMojo {
 
     List<File> files = getFiles(fileSet);
     for (File f : files) {
-      getLog().info("unpacking " + f.getName() + " to " + outputDirectory);
+      getLog().info("Unpacking " + f.getName() + " to " + outputDirectory);
       unpack(f);
     }
   }
@@ -111,7 +111,7 @@ public class UnpackMojo extends AbstractMojo {
       unArchiver.extract();
       
     } catch (Exception ex) {
-      throw new MojoFailureException("unpack failed", ex);
+      throw new MojoFailureException("Unpack failed", ex);
     }
   }
 
